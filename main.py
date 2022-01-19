@@ -9,6 +9,8 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from time import sleep
 import pandas as pd
+import re
+from datetime import date, timedelta
 
 def main():
     # Variáveis
@@ -59,11 +61,35 @@ def main():
     for Card in Site.find_all("li", attrs={"class":"widget widget--card widget--info"}):
         title = Card.find("div", attrs={"class":"widget--info__title product-color"}).text
         description = Card.find("p", attrs={"class":"widget--info__description"}).text
-        date = Card.find("div", attrs={"class":"widget--info__meta"}).text
+        pub_date = Card.find("div", attrs={"class":"widget--info__meta"}).text[0:10]
         link = Card.find("a")["href"]
         
+        # Modificando Data de Publicação
+        
+        # Para modificar a data, detectei o padrão das datas contidas no site_config_dir
+        
+        # Verificando se existe 'h' no meio da string, como mostrado no site. Ex: "há 6 dias" ou "há 2 horas"
+        if 'h' not in pub_date:
+            pub_date = pub_date
+        else:
+            
+            # Caso tenha 'd', pelo padrão significa dias, para isso pegamos
+            # quantos dias atrás foram, e subtraimos da data atual 
+            if 'd' in pub_date:
+                # Usando regex para pegar apenas numeros da string
+                num = re.sub('[^0-9]', '', pub_date)
+                
+                # Retornando data
+                pub_date = date.today() - timedelta(days=int(num))
+                pub_date = f"{pub_date.day:02d}/{pub_date.month:02d}/{pub_date.year}"
+            
+            # Caso contrário, adicionamos a data de atual
+            else:
+                # Tranformando data no dia atual
+                pub_date = f"{date.today.day:02d}/{date.today.month:02d}/{date.today.year}"
+                    
         # Adicionando dados a lista
-        data_list.append([title[9:-7],description,date,link])
+        data_list.append([title[9:-7],description,pub_date,link])
     
     # Criando dataframe com as informações obtidas
     dataframe = pd.DataFrame(data_list, columns=["title","description","date","link"])
